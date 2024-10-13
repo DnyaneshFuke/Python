@@ -1,0 +1,8 @@
+def add(i,j):
+    return i+j
+
+i=int(input("Enter num1:"))
+j=int(input("Enter num2:"))
+
+r=add(i,j)
+print("Addition is:",r)
