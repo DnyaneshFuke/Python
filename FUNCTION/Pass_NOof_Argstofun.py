@@ -1,6 +1,9 @@
 import random
 def arrsum(*args):
+    for i in args:
+        print(i*3 ,end=" ")
     return sum(args)
+
 
 print(arrsum(1,2,3,4,5))
 print(arrsum(5,6,7,8,9))
