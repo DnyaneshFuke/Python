@@ -5,18 +5,18 @@ class Car:
         if (brand.startswith('-') and brand[1:].isdigit()) or (model.startswith('-') and model[1:].isdigit()):
             raise ValueError("Values can't be negative.")
 
-        self.brand = brand
-        self.model = model
-        print("Car brand is:", self.brand)
-        print("Car model is:", self.model)
+        self.b = brand
+        self.m = model
+        print("Car brand is:", self.b)
+        print("Car model is:", self.m)
 
 try:         
-    MyCar = Car("ABC", "2001")  # This will raise an error
+    MyCar = Car("BMW", "M2")  # This will raise an error
 except ValueError as e:
     print(e)
 
 # These lines will only run if MyCar is successfully created
 # If the above raises an error, MyCar will not be defined
 if 'MyCar' in locals():
-    print(MyCar.brand)
-    print(MyCar.model)
+    print(MyCar.b)
+    print(MyCar.m)
