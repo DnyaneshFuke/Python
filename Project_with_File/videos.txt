@@ -1,0 +1,1 @@
+[{"Name": "C++", "Time": "8Hrs"}, {"Name": "Ruby", "Time": "3Hrs"}, {"Name": "Go", "Time": "9Hrs"}, {"Name": "Perl", "Time": "5Hrs"}, {"Name": "HTML", "Time": "2Hrs"}, {"Name": "CSS", "Time": "5Hrs"}, {"Name": "PHP", "Time": "6Hrs"}, {"Name": "Kotlin", "Time": "7Hrs"}, {"Name": "TypeScript", "Time": "4Hrs"}]
