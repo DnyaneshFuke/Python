@@ -1,6 +1,3 @@
-Here is the complete README file in markdown format:
-
-```markdown
 # Potato Disease Classification App
 
 This project involves creating a machine learning model to classify potato leaves as early blight, late blight, or healthy.
