@@ -12,9 +12,9 @@ Project_with_SQLite/
 Project_with_MongoDB/
 __pycache__/
 SCOPE/
-ML_Pro/Traning_img/Potato__Early_blight/
-ML_Pro/Traning_img/Potato__Late_blight/
-ML_Pro/Traning_img/Potato__healthy/
+ML_Pro/Traning_img/Potato___Early_blight/
+ML_Pro/Traning_img/Potato___Late_blight/
+ML_Pro/Traning_img/Potato___healthy/
 ML_Pro/.ipynb_checkpoints/
 ML_Pro/model/
 ML_Pro/.env

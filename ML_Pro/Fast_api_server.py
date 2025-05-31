@@ -6,109 +6,81 @@ from io import BytesIO
 import tensorflow as tf
 import os
 from dotenv import load_dotenv
-import google.generativeai as genai
+import cohere
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from starlette.responses import JSONResponse
 
-# Load environment variables
 load_dotenv()
 
-# Access the Gemini API key from the .env file
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-# Configure Gemini API
-genai.configure(api_key=GEMINI_API_KEY)
-
-# Model path
+COHERE_API_KEY = os.getenv("COHERE_API_KEY")
 MODEL_PATH = os.getenv("MODEL_PATH")
 
-# Initialize FastAPI and Rate Limiter (60 requests per minute)
+co = cohere.Client(COHERE_API_KEY)
+
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
-
-# Add rate limiting error handling
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Load the model from the correct path
 MODEL = tf.keras.models.load_model(MODEL_PATH)
+class_names = ['Early_blight', 'Late_blight', 'Healthy']
 
-# Class names corresponding to the model's output labels
-class_names = ['Early_blight',  'Late_blight','Healthy']
 def get_cure_and_prevention(disease: str) -> str:
-    """
-    Query Gemini API for cure and prevention of the given disease.
-    Args:
-        disease: Predicted disease class.
-    Returns:
-        A string containing cure and prevention details.
-    """
     try:
-        # Custom prompt for Gemini API
         prompt = f"""
         You are an expert plant disease advisor. A farmer has detected {disease} in their potato crop.
-        Provide the following information:
-        - Symptoms of {disease}
-        - Immediate cures
-        - Prevention methods
-        Keep the explanation simple, concise, and actionable.
+        Provide the following in this Markdown format:
+        **Symptoms**
+        - symptom 1
+        - symptom 2
+
+        **Cures**
+        - cure 1
+        - cure 2
+
+        **Prevention**
+        - method 1
+        - method 2
         """
-        # Use Gemini API to generate a response
-        model = genai.GenerativeModel("gemini-pro")
-        response = model.generate_content(prompt)
-        
-        # Check if a response was returned
-        if response.text:
-            return response.text
+
+        response = co.generate(
+            model='command',
+            prompt=prompt,
+            max_tokens=300,
+            temperature=0.7
+        )
+
+        if response.generations:
+            return response.generations[0].text.strip()
         else:
             return "No information found."
     except Exception as e:
-        return f"Error querying Gemini API: {str(e)}"
-def read_imagefile(data) -> dict:
-    """
-    Preprocess the image and predict the class.
-    Args:
-        data: Image data in byte format.
-    Returns:
-        A dictionary containing the prediction and the associated probabilities.
-    """
+        return f"Error querying Cohere API: {str(e)}"
+
+def read_imagefile(data):
     try:
-        # Open and preprocess the image (resize to 256x256 and normalize)
-        image = np.array(Image.open(BytesIO(data))) #convert("RGB").resize((256, 256)))
-        #image = image / 255.0  # Normalize to [0, 1]
-         # Raw probabilities for all classes
-        
-        
+        image = np.array(Image.open(BytesIO(data)))
     except Exception as e:
-        raise ValueError(f"Error during image processing: {str(e)}")
+        raise ValueError(f"Image processing error: {str(e)}")
     return image
 
 @app.get("/")
 async def read_root():
-    """
-    Root endpoint to check if the FastAPI app is running.
-    """
     return {"message": "FastAPI is running. Use /uploadfile/ for file uploads."}
 
 @app.post("/uploadfile/")
-@limiter.limit("60/minute")  # Rate limiting: 60 requests per minute
+@limiter.limit("60/minute")
 async def create_upload_file(request: Request, file: UploadFile = File(...)):
-    """
-    Endpoint to handle file uploads, make predictions, and return results.
-    """
     try:
-        # Get the image data and process it
         image = read_imagefile(await file.read())
-        image_batch = np.expand_dims(image, 0)  # Add batch dimension
-        
-        # Predict the class probabilities
+        image_batch = np.expand_dims(image, 0)
+
         prediction = MODEL.predict(image_batch)
-        predicted_class = class_names[np.argmax(prediction[0])]  # Class label
-        prediction_probs = np.max(prediction[0]) 
-        
-        # Fetch cure and prevention details from Gemini API
+        predicted_class = class_names[np.argmax(prediction[0])]
+        prediction_probs = np.max(prediction[0])
+
         cure_and_prevention = get_cure_and_prevention(predicted_class)
 
         return {
@@ -117,17 +89,13 @@ async def create_upload_file(request: Request, file: UploadFile = File(...)):
             "Cure_and_Prevention": cure_and_prevention
         }
     except Exception as e:
-        # Return error message if something goes wrong
         return {"error": str(e)}
 
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    """
-    Custom handler for rate limit exceeded.
-    """
     return JSONResponse(
         status_code=429,
-        content={"error": "Rate limit exceeded: Only 60 requests allowed per minute. Please try again later."}
+        content={"error": "Rate limit exceeded: Only 60 requests per minute. Try again later."}
     )
 
 if __name__ == "__main__":
